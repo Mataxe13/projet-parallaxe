@@ -1,0 +1,115 @@
+using System.Collections;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class WebCam : MonoBehaviour
+{
+    public WebCamTexture s_webcam = null;
+    public GameObject Camera;
+
+    static float initial_Tx = 30.3f;
+    static float initial_Ty = 2.5f;
+    static float initial_Tz = 27f;
+
+    static float initial_Rx = 0f;
+    static float initial_Ry = 180f;
+    static float initial_Rz = 0f;
+
+    Vector3 initial_Position = new Vector3(initial_Tx, initial_Ty, initial_Tz);
+    Quaternion initial_Rotation = new Quaternion(initial_Rx, initial_Ry, initial_Rz, 1f);
+
+    float dist;
+
+    void Start()
+    {
+        s_webcam = new WebCamTexture();
+        Debug.Log(s_webcam.deviceName);
+
+        s_webcam.Play();
+
+        transform.position = initial_Position;
+        transform.rotation = initial_Rotation;
+    }
+
+    void Update()
+    {
+        int[,] Vect = new int[s_webcam.width * s_webcam.height ,2];
+        int[] point1 = new int[2];
+        int[] point2 = new int[2];
+        int[] point3 = new int[2];
+
+        Texture2D image1 = new Texture2D(s_webcam.width, s_webcam.height);
+
+        int x, y, cont;
+        cont = 0;
+        for (x = 0; x < s_webcam.width; x++)
+        {
+            for (y = 0; y < s_webcam.height; y++)
+            {
+                Color pixelColor = s_webcam.GetPixel(x, y);
+                float r = pixelColor.r;                        //récupération du canal rouge
+                if (r > 0.5)
+                {
+                    Vect[cont, 0] = x;
+                    Vect[cont, 1] = y;
+                    image1.SetPixel(x, y, Color.white);
+
+                    cont++;
+                }
+                else
+                {
+                    image1.SetPixel(x, y, Color.black);
+                }
+
+            }
+        }
+
+        Debug.Log(cont / 3);
+
+        int[] point1_x = new int[cont / 3];
+        int[] point2_x = new int[cont / 3];
+        int[] point3_x = new int[cont / 3];
+        int[] point1_y = new int[cont / 3];
+        int[] point2_y = new int[cont / 3];
+        int[] point3_y = new int[cont / 3];
+
+        for (x = 0; x < cont/3; x++)
+        {
+            point1_x[x] = Vect[x, 0];
+            point1_y[x] = Vect[x, 1];
+        }
+
+        for (x = 0; x < cont / 3;x++)
+        {
+            point2_x[x] = Vect[x+cont/3, 0];
+            point2_y[x] = Vect[x+cont/3, 1];
+        }
+
+        for (x = 0; x < cont / 3;x++)
+        {
+            point3_x[x] = Vect[x+2*cont/3, 0];
+            point3_y[x] = Vect[x+2*cont/3, 1];
+        }
+
+        Array.Sort(point1_x);
+        Array.Sort(point2_x);
+        Array.Sort(point3_x);
+        Array.Sort(point1_y);
+        Array.Sort(point2_y);
+        Array.Sort(point3_y);
+
+        point1[0] = point1_x[cont / 6];
+        point1[1] = point1_y[cont / 6];
+        point2[0] = point2_x[cont / 6];
+        point2[1] = point2_y[cont / 6];
+        point3[0] = point3_x[cont / 6];
+        point3[1] = point3_y[cont / 6];
+
+
+        dist = Mathf.Sqrt(Mathf.Pow(point1[0] - point3[0], 2) + Mathf.Pow(point1[1] - point3[1], 2));
+
+        Camera.transform.position = initial_Position + new Vector3((point2[0] - s_webcam.width/2) / 300f, (point2[1] - s_webcam.height / 2) / 300f, 0f);
+
+    }
+}
